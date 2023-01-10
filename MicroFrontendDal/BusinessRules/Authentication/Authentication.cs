@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 using static MicroFrontendDal.BusinessConstants.BusinessConstant;
 
@@ -57,7 +58,7 @@ namespace MicroFrontendDal.BusinessRules.Authentication
                         DbContext.Users.Add(objUser);
                         DbContext.SaveChanges();
                         BusinessRules.Email.Email mail = new BusinessRules.Email.Email();
-                        var sendMailThread = new Thread(() => mail.WelcomeEmail(objUser.Email,"Welcome to PoC"));
+                        var sendMailThread = new Thread(() => mail.WelcomeEmail(objUser.Email, "Welcome to PoC"));
                         sendMailThread.Start();
                         return CustomMessages.CM001;
                     }
@@ -88,11 +89,18 @@ namespace MicroFrontendDal.BusinessRules.Authentication
 
                     if (await UserManager.CheckPasswordAsync(User, dtouser.Password) && UserDetail != null)
                     {
+                        var claims = new[] {
+                        new Claim("UserId", UserDetail.UserId.ToString()),
+                        new Claim("UserName", UserDetail.UserName),
+                        new Claim("Email", UserDetail.Email)
+                        };
+
                         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
                         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
                         var Token = new JwtSecurityToken(
                             issuer: configuration["JWT:ValidIssuer"],
                             audience: configuration["JWT:ValidAudience"],
+                            claims,
                             expires: DateTime.Now.AddMinutes(120),
                             signingCredentials: credentials
                             );
@@ -100,7 +108,8 @@ namespace MicroFrontendDal.BusinessRules.Authentication
                         Response = new DtoTokenResponse()
                         {
                             Token = TokenSting,
-                            Message = CustomMessages.CM004
+                            Message = CustomMessages.CM004,
+                            ValidTill = Token.ValidTo
                         };
                     }
                     else
