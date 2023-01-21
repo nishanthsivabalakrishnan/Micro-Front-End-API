@@ -48,7 +48,10 @@ namespace MicroFrontendDal.BusinessRules.Email
                 return false;
             }
         }
-        public bool WelcomeEmail(string toUser, string subject)
+        #endregion
+
+        #region Welcome Email
+        public bool WelcomeEmail(string toUser, string subject,string resettoken)
         {
             try
             {
@@ -59,13 +62,13 @@ namespace MicroFrontendDal.BusinessRules.Email
                 var SmtpPort = dbContext.MasterInformations.FirstOrDefault(x => x.MasterId == BusinessConstant.MasterInformation.SMTPPort);
                 var senderDisplayName = dbContext.MasterInformations.FirstOrDefault(x => x.MasterId == BusinessConstant.MasterInformation.DisplayName);
                 var welcomeTemplate = dbContext.MasterInformations.FirstOrDefault(x => x.MasterId == BusinessConstant.MasterInformation.WelcomeTemplate);
-
+                var url = dbContext.MasterInformations.FirstOrDefault(x => x.MasterId == BusinessConstant.MasterInformation.FrontEndUrl);
                 if ((userEmail == null || userPassword == null || SmtpPort == null) || welcomeTemplate == null)
                 {
                     return false;
                 }
-
-                string body = welcomeTemplate.Value.Replace(Common.ConfirmEmailReplaceText, "www.google.com");
+                var BuildUrl = url.Value + "welcome?email=" + toUser + "&id=" + resettoken;
+                string body = welcomeTemplate.Value.Replace(Common.ConfirmEmailReplaceText, BuildUrl);
 
                 if (SmtpHost != null && senderDisplayName != null && body != string.Empty)
                 {
@@ -94,7 +97,6 @@ namespace MicroFrontendDal.BusinessRules.Email
                 return false;
             }
         }
-
         #endregion
     }
 }

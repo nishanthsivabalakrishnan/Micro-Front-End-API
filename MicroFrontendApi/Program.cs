@@ -1,6 +1,7 @@
 using MicroFrontendDal.BusinessRules.AppDbContext;
 using MicroFrontendDal.BusinessRules.Authentication;
 using MicroFrontendDal.BusinessRules.Logger;
+using MicroFrontendDal.BusinessRules.Products;
 using MicroFrontendDal.DataModels;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -62,6 +63,7 @@ try
     });
     //Add Services
     builder.Services.AddScoped<IAuthentication, Authentication>();
+    builder.Services.AddScoped<IProducts, Products>();
 
     var app = builder.Build();
 

@@ -22,9 +22,11 @@ namespace MicroFrontendDal.DataModels
         public virtual DbSet<AspNetUserClaim> AspNetUserClaims { get; set; } = null!;
         public virtual DbSet<AspNetUserLogin> AspNetUserLogins { get; set; } = null!;
         public virtual DbSet<AspNetUserToken> AspNetUserTokens { get; set; } = null!;
+        public virtual DbSet<Category> Categories { get; set; } = null!;
         public virtual DbSet<Logger> Loggers { get; set; } = null!;
         public virtual DbSet<MasterInformation> MasterInformations { get; set; } = null!;
-        public virtual DbSet<RolesMaster> RolesMasters { get; set; } = null!;
+        public virtual DbSet<MasterRole> MasterRoles { get; set; } = null!;
+        public virtual DbSet<MasterStatus> MasterStatuses { get; set; } = null!;
         public virtual DbSet<User> Users { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -119,6 +121,15 @@ namespace MicroFrontendDal.DataModels
                     .HasForeignKey(d => d.UserId);
             });
 
+            modelBuilder.Entity<Category>(entity =>
+            {
+                entity.ToTable("Category");
+
+                entity.Property(e => e.CreatedOn).HasColumnType("datetime");
+
+                entity.Property(e => e.UpdatedOn).HasColumnType("datetime");
+            });
+
             modelBuilder.Entity<Logger>(entity =>
             {
                 entity.ToTable("Logger");
@@ -135,23 +146,24 @@ namespace MicroFrontendDal.DataModels
                 entity.Property(e => e.InformationName)
                     .HasMaxLength(500)
                     .HasColumnName("Information Name");
-
-                entity.Property(e => e.Value).HasMaxLength(500);
             });
 
-            modelBuilder.Entity<RolesMaster>(entity =>
+            modelBuilder.Entity<MasterRole>(entity =>
             {
-                entity.HasNoKey();
+                entity.HasKey(e => e.RoleId);
 
-                entity.ToTable("RolesMaster");
+                entity.ToTable("MasterRole");
 
-                entity.Property(e => e.CreatedOn).HasMaxLength(100);
+                entity.Property(e => e.RoleName).HasMaxLength(50);
+            });
 
-                entity.Property(e => e.RoleId).ValueGeneratedOnAdd();
+            modelBuilder.Entity<MasterStatus>(entity =>
+            {
+                entity.HasKey(e => e.StatusId);
 
-                entity.Property(e => e.RoleName).HasMaxLength(100);
+                entity.ToTable("MasterStatus");
 
-                entity.Property(e => e.UpdatedOn).HasMaxLength(100);
+                entity.Property(e => e.Status).HasMaxLength(50);
             });
 
             modelBuilder.Entity<User>(entity =>

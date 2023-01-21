@@ -17,6 +17,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="MimeKit" Version="3.4.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     <PackageReference Include="NLog.Database" Version="5.1.1" />
     <PackageReference Include="NLog.Web.AspNetCore" Version="5.2.1" />
     <PackageReference Include="SonarAnalyzer.CSharp" Version="8.51.0.59060">

@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace MicroFrontendDal.DTO.Authentication
 {
-    public class DtoRegisterUser
+    public class DtoVerifyEmail
     {
         public string Email { get; set; }
-        public string Password { get; set; }
+        public string Token { get; set; }
     }
-    public class DtoUserRegistrationResponse
+    public class DtoVerifyEmailResponse
     {
         public int Status { get; set; }
         public string Message { get; set; }

@@ -1,7 +1,10 @@
 ﻿using MicroFrontendDal.BusinessRules.Authentication;
 using MicroFrontendDal.BusinessRules.Logger;
 using MicroFrontendDal.DTO.Authentication;
+using MicroFrontendDal.DTO.Common;
+using MicroFrontendDal.Utilities;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using static MicroFrontendDal.BusinessConstants.BusinessConstant;
 
 namespace MicroFrontendApi.Controllers
@@ -21,18 +24,28 @@ namespace MicroFrontendApi.Controllers
 
         [HttpPost]
         [Route("Register")]
-        public async Task<IActionResult> Register(DtoRegisterUser objInputData)
+        public async Task<IActionResult> Register(DtoFrontendData objInputData)
         {
             try
             {
-                var Response = await UserRepository.RegisterUser(objInputData);
-                if (Response == CustomMessages.CM001)
+                var decryptedData = Utilities.DecryptStringAes(objInputData.ObjInputString);
+                if (decryptedData != null)
                 {
-                    return StatusCode(StatusCodes.Status200OK, new { Message = CustomMessages.CM001 });
+                    DtoRegisterUser data = JsonConvert.DeserializeObject<DtoRegisterUser>(decryptedData);
+                    var Response = await UserRepository.RegisterUser(data);
+                    var jsonResponse = JsonConvert.SerializeObject(Response);
+                    if (Response.Status == Status.UserCreatedStatus)
+                    {
+                        return StatusCode(StatusCodes.Status200OK, Utilities.EncryptStringAes(jsonResponse));
+                    }
+                    else
+                    {
+                        return StatusCode(StatusCodes.Status501NotImplemented, Utilities.EncryptStringAes(jsonResponse));
+                    }
                 }
                 else
                 {
-                    return StatusCode(StatusCodes.Status400BadRequest, new { Message = CustomMessages.CM002 });
+                    return StatusCode(StatusCodes.Status400BadRequest, new { ErrorResponse.ErrorResponseMessage });
                 }
             }
             catch (Exception ex)
@@ -43,18 +56,28 @@ namespace MicroFrontendApi.Controllers
         }
         [HttpPost]
         [Route("LoginUser")]
-        public async Task<IActionResult> LoginUser(DtoLoginUser objInputData)
+        public async Task<IActionResult> LoginUser(DtoFrontendData objInputData)
         {
             try
             {
-                var Response = await UserRepository.LoginUser(objInputData);
-                if (Response.Token != string.Empty)
+                var decryptedData = Utilities.DecryptStringAes(objInputData.ObjInputString);
+                if (decryptedData != null)
                 {
-                    return StatusCode(StatusCodes.Status200OK, Response);
+                    DtoLoginUser data = JsonConvert.DeserializeObject<DtoLoginUser>(decryptedData);
+                    var Response = await UserRepository.LoginUser(data);
+                    string jsonResponse = JsonConvert.SerializeObject(Response);
+                    if (Response.Token != string.Empty)
+                    {
+                        return StatusCode(StatusCodes.Status200OK, Utilities.EncryptStringAes(jsonResponse));
+                    }
+                    else
+                    {
+                        return StatusCode(StatusCodes.Status200OK, Utilities.EncryptStringAes(jsonResponse));
+                    }
                 }
                 else
                 {
-                    return StatusCode(StatusCodes.Status400BadRequest, Response);
+                    return StatusCode(StatusCodes.Status400BadRequest, new { ErrorResponse.ErrorResponseMessage });
                 }
             }
             catch (Exception ex)
@@ -63,6 +86,31 @@ namespace MicroFrontendApi.Controllers
                 return StatusCode(StatusCodes.Status501NotImplemented, new { ErrorResponse.ErrorResponseMessage });
             }
         }
+
+        [HttpPost]
+        [Route("VerifyEmail")]
+        public async Task<IActionResult> VerifyEmail(DtoVerifyEmail objInputData)
+        {
+            try
+            {
+                var Response = await UserRepository.VeriifyEmail(objInputData);
+                string jsonResponse = JsonConvert.SerializeObject(Response);
+                if (Response.Status == ResponseStatus.Success)
+                {
+                    return StatusCode(StatusCodes.Status200OK, Utilities.EncryptStringAes(jsonResponse));
+                }
+                else
+                {
+                    return StatusCode(StatusCodes.Status200OK, Utilities.EncryptStringAes(jsonResponse));
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.ErrorLog("AuthenticationController", "LoginUser", ex);
+                return StatusCode(StatusCodes.Status501NotImplemented, new { ErrorResponse.ErrorResponseMessage });
+            }
+        }
+
         [HttpPost("ForgetPassword")]
         public async Task<IActionResult> ForgetPassword(DtoForgetPassword objInputData)
         {
