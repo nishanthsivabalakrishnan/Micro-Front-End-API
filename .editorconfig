@@ -236,7 +236,7 @@ dotnet_diagnostic.S1186.severity = error
 
 # S1192: String literals should not be duplicated 
 
-dotnet_diagnostic.S1192.severity = error 
+dotnet_diagnostic.S1192.severity = warning 
 
   
 
@@ -972,3 +972,6 @@ dotnet_diagnostic.S907.severity = warning
 
 # IDE0005: Using directive is unnecessary.
 dotnet_diagnostic.IDE0005.severity = warning
+
+# IDE0058: Expression value is never used
+dotnet_diagnostic.IDE0058.severity = none

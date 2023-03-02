@@ -12,4 +12,8 @@ namespace MicroFrontendDal.DTO.Common
     {
         public string ObjInputString { get; set; }
     }
+    public class DtoFrontendGetData
+    {
+        public dynamic Data { get; set; }
+    }
 }

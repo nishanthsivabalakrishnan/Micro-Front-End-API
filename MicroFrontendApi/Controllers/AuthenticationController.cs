@@ -16,10 +16,10 @@ namespace MicroFrontendApi.Controllers
 
         protected IAuthentication UserRepository;
         private readonly Log Logger;
-        public AuthenticationController(IAuthentication userRepository)
+        public AuthenticationController(IAuthentication userRepository, Log logger)
         {
             UserRepository = userRepository;
-            Logger = new Log();
+            Logger = logger;
         }
 
         [HttpPost]
@@ -54,6 +54,7 @@ namespace MicroFrontendApi.Controllers
                 return StatusCode(StatusCodes.Status501NotImplemented, new { ErrorResponse.ErrorResponseMessage });
             }
         }
+
         [HttpPost]
         [Route("LoginUser")]
         public async Task<IActionResult> LoginUser(DtoFrontendData objInputData)
@@ -132,6 +133,7 @@ namespace MicroFrontendApi.Controllers
                 return StatusCode(StatusCodes.Status501NotImplemented, new { ErrorResponse.ErrorResponseMessage });
             }
         }
+
         [HttpPost("ResetPassword")]
         public async Task<IActionResult> ResetPassword(DtoResetPassword objInputData)
         {
@@ -150,6 +152,154 @@ namespace MicroFrontendApi.Controllers
             catch (Exception ex)
             {
                 Logger.ErrorLog("AuthenticationController", "ResetPassword", ex);
+                return StatusCode(StatusCodes.Status501NotImplemented, new { ErrorResponse.ErrorResponseMessage });
+            }
+        }
+
+        [HttpGet("GetAllRoles")]
+        public async Task<IActionResult> GetAllRoles()
+        {
+            try
+            {
+                var Response = UserRepository.GetAllActiveRoles();
+                var jsonResponse = JsonConvert.SerializeObject(Response);
+                return StatusCode(StatusCodes.Status200OK, new { Response = Utilities.EncryptStringAes(jsonResponse) });
+            }
+            catch (Exception ex)
+            {
+                Logger.ErrorLog("AuthenticationController", "GetAllRoles", ex);
+                return StatusCode(StatusCodes.Status501NotImplemented, new { ErrorResponse.ErrorResponseMessage });
+            }
+        }
+
+        [HttpPost]
+        [Route("AdminRegisterNewUser")]
+        public async Task<IActionResult> AdminRegisterNewUser(DtoFrontendData objInputData)
+        {
+            try
+            {
+                var decryptedData = Utilities.DecryptStringAes(objInputData.ObjInputString);
+                if (decryptedData != null)
+                {
+                    DtoAdminRegisterNewUser data = JsonConvert.DeserializeObject<DtoAdminRegisterNewUser>(decryptedData);
+                    var Response = await UserRepository.AdminRegisterUser(data);
+                    var jsonResponse = JsonConvert.SerializeObject(Response);
+                    if (Response.Status == ResponseStatus.Success)
+                    {
+                        return StatusCode(StatusCodes.Status200OK, Utilities.EncryptStringAes(jsonResponse));
+                    }
+                    else
+                    {
+                        return StatusCode(StatusCodes.Status200OK, Utilities.EncryptStringAes(jsonResponse));
+                    }
+                }
+                else
+                {
+                    return StatusCode(StatusCodes.Status400BadRequest, new { ErrorResponse.ErrorResponseMessage });
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.ErrorLog("AuthenticationController", "AdminRegisterNewUser", ex);
+                return StatusCode(StatusCodes.Status501NotImplemented, new { ErrorResponse.ErrorResponseMessage });
+            }
+        }
+
+        [HttpPost]
+        [Route("ResetPasswordAndConfirmEmail")]
+        public async Task<IActionResult> ResetPasswordAndConfirmEmail(DtoFrontendData objInputData)
+        {
+            try
+            {
+                var decryptedData = Utilities.DecryptStringAes(objInputData.ObjInputString);
+                if (decryptedData != null)
+                {
+                    DtoResetPasswordAndVerifyEmail data = JsonConvert.DeserializeObject<DtoResetPasswordAndVerifyEmail>(decryptedData);
+                    var Response = await UserRepository.ResetPasswordAndConfirmEmail(data);
+                    var jsonResponse = JsonConvert.SerializeObject(Response);
+                    if (Response.Status == ResponseStatus.Success)
+                    {
+                        return StatusCode(StatusCodes.Status200OK, Utilities.EncryptStringAes(jsonResponse));
+                    }
+                    else
+                    {
+                        return StatusCode(StatusCodes.Status200OK, Utilities.EncryptStringAes(jsonResponse));
+                    }
+                }
+                else
+                {
+                    return StatusCode(StatusCodes.Status400BadRequest, new { ErrorResponse.ErrorResponseMessage });
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.ErrorLog("AuthenticationController", "ResetPasswordAndConfirmEmail", ex);
+                return StatusCode(StatusCodes.Status501NotImplemented, new { ErrorResponse.ErrorResponseMessage });
+            }
+        }
+
+        [HttpPost]
+        [Route("RemoveUser")]
+        public async Task<IActionResult> RemoveUser(DtoFrontendData objInputData)
+        {
+            try
+            {
+                var decryptedData = Utilities.DecryptStringAes(objInputData.ObjInputString);
+                if (decryptedData != null)
+                {
+                    int userId = JsonConvert.DeserializeObject<int>(decryptedData);
+                    var Response = await UserRepository.RemoveUser(userId);
+                    var jsonResponse = JsonConvert.SerializeObject(Response);
+                    if (Response.Status == ResponseStatus.Success)
+                    {
+                        return StatusCode(StatusCodes.Status200OK, Utilities.EncryptStringAes(jsonResponse));
+                    }
+                    else
+                    {
+                        return StatusCode(StatusCodes.Status200OK, Utilities.EncryptStringAes(jsonResponse));
+                    }
+                }
+                else
+                {
+                    return StatusCode(StatusCodes.Status400BadRequest, new { ErrorResponse.ErrorResponseMessage });
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.ErrorLog("AuthenticationController", "ResetPasswordAndConfirmEmail", ex);
+                return StatusCode(StatusCodes.Status501NotImplemented, new { ErrorResponse.ErrorResponseMessage });
+            }
+        }
+
+        [HttpPost]
+        [Route("ResendActivationMail")]
+        public async Task<IActionResult> ResendActivationMail(DtoFrontendData objInputData)
+        {
+            try
+            {
+                var decryptedData = Utilities.DecryptStringAes(objInputData.ObjInputString);
+                DtoRegisterUser data = JsonConvert.DeserializeObject<DtoRegisterUser>(decryptedData);
+                if (objInputData != null)
+                {
+                    var Response = await UserRepository.ResendActivationMail(data.Email);
+                    var jsonResponse = JsonConvert.SerializeObject(Response);
+                    if (Response.Status == Status.UserResendActivationMailSent)
+                    {
+                        return StatusCode(StatusCodes.Status200OK, Utilities.EncryptStringAes(jsonResponse));
+                    }
+                    else
+                    {
+                        return StatusCode(StatusCodes.Status501NotImplemented, Utilities.EncryptStringAes(jsonResponse));
+                    }
+                }
+                else
+                {
+                    return StatusCode(StatusCodes.Status400BadRequest, new { ErrorResponse.ErrorResponseMessage });
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.ErrorLog("AuthenticationController", "Register", ex);
                 return StatusCode(StatusCodes.Status501NotImplemented, new { ErrorResponse.ErrorResponseMessage });
             }
         }

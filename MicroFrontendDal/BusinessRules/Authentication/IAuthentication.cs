@@ -1,4 +1,6 @@
-﻿using MicroFrontendDal.DTO.Authentication;
+﻿using MicroFrontendDal.DataModels;
+using MicroFrontendDal.DTO.Authentication;
+using MicroFrontendDal.DTO.Common;
 
 namespace MicroFrontendDal.BusinessRules.Authentication
 {
@@ -9,5 +11,10 @@ namespace MicroFrontendDal.BusinessRules.Authentication
         Task<string> ForgetPassword(DtoForgetPassword dtouser);
         Task<string> ResetPassword(DtoResetPassword dtouser);
         Task<DtoVerifyEmailResponse> VeriifyEmail(DtoVerifyEmail dtouser);
+        List<MasterRole> GetAllActiveRoles();
+        Task<DtoAdminRegisterNewUserResponse> AdminRegisterUser(DtoAdminRegisterNewUser dtouser);
+        Task<DtoResponse> ResetPasswordAndConfirmEmail(DtoResetPasswordAndVerifyEmail dtouser);
+        Task<DtoResponse> RemoveUser(int userId);
+        Task<DtoUserRegistrationResponse> ResendActivationMail(string email);
     }
 }

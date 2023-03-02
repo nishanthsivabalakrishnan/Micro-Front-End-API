@@ -24,12 +24,34 @@
             public static readonly string CM012 = "Couldn't verify your Email!";
             public static readonly string CM013 = "Category Added Successfully!";
             public static readonly string CM014 = "Adding Category failed!";
+            public static readonly string CM015 = "Password set and Email verified Successfully!";
+            public static readonly string CM016 = "Password set and Email verified failed!";
+            public static readonly string CM017 = "User Details Updated Successfully!";
+            public static readonly string CM018 = "User Deleted Successfully!";
+            public static readonly string CM019 = "Failed to Delete user!";
+            public static readonly string CM020 = "Task Created Successfully!";
+            public static readonly string CM021 = "Task Updated Successfully!";
+            public static readonly string CM022 = "Failed to Create task!";
+            public static readonly string CM023 = "Task deleted Successfully!";
+            public static readonly string CM024 = "Failed to delete task!";
+            public static readonly string CM025 = "Task status updated successfully!";
+            public static readonly string CM026 = "Failed to update Task status!";
+            public static readonly string CM027 = "Resend Activation mail sent!";
+            public static readonly string CM028 = "Failed to sent resend activation mail!";
+            public static readonly string CM029 = "Profile Information Updated Successfully!";
+            public static readonly string CM030 = "Failed to update Profile Information!";
         }
         public static class Status
         {
             public static readonly int NewUser = 1;
             public static readonly int UserCreatedStatus = 2;
             public static readonly int UserNotCreatedStatus = 3;
+            public static readonly int UserResendActivationMailSent = 4;
+        }
+        public static class MasterUserStatus
+        {
+            public static readonly int NewUser = 1;
+            public static readonly int VerifiedAndPasswordChanged = 2;
         }
         public static class MasterInformation
         {
@@ -40,6 +62,7 @@
             public static readonly int WelcomeTemplate = 5;
             public static readonly int DisplayName = 6;
             public static readonly int FrontEndUrl = 7;
+            public static readonly int FrontEndResetPasswordUrl = 8;
         }
         public static class Common
         {

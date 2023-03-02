@@ -51,7 +51,7 @@ namespace MicroFrontendDal.BusinessRules.Email
         #endregion
 
         #region Welcome Email
-        public bool WelcomeEmail(string toUser, string subject,string resettoken)
+        public bool WelcomeEmail(string toUser, string subject, string resettoken)
         {
             try
             {
@@ -97,6 +97,56 @@ namespace MicroFrontendDal.BusinessRules.Email
                 return false;
             }
         }
+        #endregion
+
+        #region Admin Add User Welcome Mail
+        public bool AdminAddUserWelcomeEmail(string toUser, string subject, string resettoken)
+        {
+            try
+            {
+                MicroFrontEndDbContext dbContext = new();
+                var userEmail = dbContext.MasterInformations.FirstOrDefault(x => x.MasterId == BusinessConstant.MasterInformation.CommunicationEmail);
+                var userPassword = dbContext.MasterInformations.FirstOrDefault(x => x.MasterId == BusinessConstant.MasterInformation.CommunicationEmailPassword);
+                var SmtpHost = dbContext.MasterInformations.FirstOrDefault(x => x.MasterId == BusinessConstant.MasterInformation.SMTPHost);
+                var SmtpPort = dbContext.MasterInformations.FirstOrDefault(x => x.MasterId == BusinessConstant.MasterInformation.SMTPPort);
+                var senderDisplayName = dbContext.MasterInformations.FirstOrDefault(x => x.MasterId == BusinessConstant.MasterInformation.DisplayName);
+                var welcomeTemplate = dbContext.MasterInformations.FirstOrDefault(x => x.MasterId == BusinessConstant.MasterInformation.WelcomeTemplate);
+                var url = dbContext.MasterInformations.FirstOrDefault(x => x.MasterId == BusinessConstant.MasterInformation.FrontEndResetPasswordUrl);
+                if ((userEmail == null || userPassword == null || SmtpPort == null) || welcomeTemplate == null)
+                {
+                    return false;
+                }
+                var BuildUrl = url.Value + "welcome?email=" + toUser + "&rt=" + resettoken;
+                string body = welcomeTemplate.Value.Replace(Common.ConfirmEmailReplaceText, BuildUrl);
+
+                if (SmtpHost != null && senderDisplayName != null && body != string.Empty)
+                {
+                    var email = new MimeMessage();
+                    String from = "\"temp\" <" + userEmail.Value + ">";
+                    from = from.Replace("temp", senderDisplayName.Value);
+                    email.From.Add(MailboxAddress.Parse(from));
+                    email.To.Add(MailboxAddress.Parse(toUser));
+                    email.Subject = subject;
+                    email.Body = new TextPart(TextFormat.Html) { Text = body };
+                    var smtp = new SmtpClient();
+                    smtp.Connect(SmtpHost.Value, int.Parse(SmtpPort.Value), SecureSocketOptions.StartTls);
+                    smtp.Authenticate(userEmail.Value, userPassword.Value);
+                    smtp.Send(email);
+                    smtp.Disconnect(true);
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                log.ErrorLog("Email", "AdminAddUserWelcomeEmail", ex);
+                return false;
+            }
+        }
+
         #endregion
     }
 }

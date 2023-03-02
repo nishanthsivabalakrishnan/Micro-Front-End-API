@@ -2,6 +2,7 @@
 using MicroFrontendDal.BusinessRules.Logger;
 using MicroFrontendDal.DataModels;
 using MicroFrontendDal.DTO.Authentication;
+using MicroFrontendDal.DTO.Common;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -21,16 +22,14 @@ namespace MicroFrontendDal.BusinessRules.Authentication
         private const string FileName = "Authentication";
         private readonly UserManager<IdentityUser> UserManager;
         private readonly Log Logger;
-        private readonly Utilities.Utilities Utilities;
         #endregion
 
         #region Constructor
-        public Authentication(UserManager<IdentityUser> userManager)
+        public Authentication(UserManager<IdentityUser> userManager, Log log)
         {
             DbContext = new MicroFrontEndDbContext();
             UserManager = userManager;
-            Logger = new Log();
-            Utilities = new Utilities.Utilities();
+            Logger = log;
         }
         #endregion
 
@@ -111,7 +110,9 @@ namespace MicroFrontendDal.BusinessRules.Authentication
                         var claims = new[] {
                         new Claim("UserId", UserDetail.UserId.ToString()),
                         new Claim("Email", UserDetail.Email),
-                        new Claim("Role", UserDetail.Role.ToString()),
+                        new Claim("Role",UserDetail.Role.ToString()),
+                        new Claim(ClaimTypes.Role, UserDetail.Role.ToString()),
+                        new Claim("Name",UserDetail.FirstName+" "+UserDetail.LastName)
                         };
 
                         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
@@ -119,17 +120,21 @@ namespace MicroFrontendDal.BusinessRules.Authentication
                         var Token = new JwtSecurityToken(issuer: configuration["JWT:ValidIssuer"], audience: configuration["JWT:ValidAudience"],
                             claims, expires: DateTime.Now.AddMinutes(180), signingCredentials: credentials);
                         var TokenSting = new JwtSecurityTokenHandler().WriteToken(Token);
+                        var route = DbContext.MasterPageRoutings.FirstOrDefault(x => x.RoleId == UserDetail.Role && x.IsDelete == false);
                         Response = new DtoTokenResponse()
                         {
+                            Status = ResponseStatus.Success,
                             Token = TokenSting,
                             Message = CustomMessages.CM004,
-                            ValidTill = Token.ValidTo
+                            ValidTill = Token.ValidTo,
+                            Route = route.MasterPageRoute
                         };
                     }
                     else
                     {
                         Response = new DtoTokenResponse()
                         {
+                            Status = ResponseStatus.Failed,
                             Token = string.Empty,
                             Message = CustomMessages.CM008
                         };
@@ -140,7 +145,8 @@ namespace MicroFrontendDal.BusinessRules.Authentication
                 {
                     Response = new DtoTokenResponse()
                     {
-                        Token = "",
+                        Status = ResponseStatus.Failed,
+                        Token = string.Empty,
                         Message = CustomMessages.CM005
                     };
                     return Response;
@@ -209,34 +215,22 @@ namespace MicroFrontendDal.BusinessRules.Authentication
                 if (user != null)
                 {
                     var verification = await UserManager.ConfirmEmailAsync(user, dtouser.Token);
-                    if(verification.Succeeded)
+                    if (verification.Succeeded)
                     {
-                        DtoVerifyEmailResponse response = new DtoVerifyEmailResponse()
+                        DtoVerifyEmailResponse successResponse = new DtoVerifyEmailResponse()
                         {
                             Status = ResponseStatus.Success,
                             Message = CustomMessages.CM011
                         };
-                        return response;
-                    }
-                    else
-                    {
-                        DtoVerifyEmailResponse response = new DtoVerifyEmailResponse()
-                        {
-                            Status = ResponseStatus.Failed,
-                            Message = CustomMessages.CM012
-                        };
-                        return response;
+                        return successResponse;
                     }
                 }
-                else
+                DtoVerifyEmailResponse response = new DtoVerifyEmailResponse()
                 {
-                    DtoVerifyEmailResponse response = new DtoVerifyEmailResponse()
-                    {
-                        Status = ResponseStatus.Failed,
-                        Message = CustomMessages.CM005
-                    };
-                    return response;
-                }
+                    Status = ResponseStatus.Failed,
+                    Message = CustomMessages.CM005
+                };
+                return response;
             }
             catch (Exception ex)
             {
@@ -245,6 +239,206 @@ namespace MicroFrontendDal.BusinessRules.Authentication
             }
         }
 
+        #endregion
+
+        #region Admin Add New User
+        public async Task<DtoAdminRegisterNewUserResponse> AdminRegisterUser(DtoAdminRegisterNewUser dtouser)
+        {
+            try
+            {
+                var IdentityUser = await UserManager.FindByEmailAsync(dtouser.Email);
+
+                if (!string.IsNullOrWhiteSpace(dtouser.Email) && IdentityUser == null && dtouser.UserId == 0)
+                {
+                    var user = new ApplicationUser { UserName = dtouser.Email, Email = dtouser.Email };
+                    string randomPassword = Utilities.Utilities.CreateRandomPassword();
+                    var UserCreated = await UserManager.CreateAsync(user, randomPassword);
+                    if (UserCreated.Succeeded)
+                    {
+                        User objUser = new();
+                        var netusers = await UserManager.FindByEmailAsync(dtouser.Email);
+                        var resetToken = await UserManager.GeneratePasswordResetTokenAsync(netusers);
+                        objUser.AuthId = netusers.Id;
+                        objUser.Role = dtouser.Role;
+                        objUser.Email = dtouser.Email;
+                        objUser.ReportsTo = dtouser.ReportsTo;
+                        objUser.FirstName = dtouser.FirstName;
+                        objUser.LastName = dtouser.LastName;
+                        objUser.Status = Status.NewUser;
+                        objUser.CreatedOn = DateTime.UtcNow;
+                        objUser.IsDelete = false;
+                        DbContext.Users.Add(objUser);
+                        DbContext.SaveChanges();
+                        Email.Email mail = new();
+                        var sendMailThread = new Thread(() =>
+                        mail.AdminAddUserWelcomeEmail(objUser.Email, "Welcome to PoC - Activate Email", HttpUtility.UrlEncode(resetToken)));
+                        sendMailThread.Start();
+                        DtoAdminRegisterNewUserResponse successResponse = new()
+                        {
+                            Message = CustomMessages.CM001,
+                            Status = ResponseStatus.Success
+                        };
+                        return successResponse;
+                    }
+                }
+                else
+                {
+                    User objUser = DbContext.Users.FirstOrDefault(x => x.UserId == dtouser.UserId);
+                    objUser.Role = dtouser.Role;
+                    objUser.Email = dtouser.Email;
+                    objUser.FirstName = dtouser.FirstName;
+                    objUser.LastName = dtouser.LastName;
+                    objUser.ReportsTo = dtouser.ReportsTo;
+                    objUser.IsDelete = false;
+                    DbContext.SaveChanges();
+                    DtoAdminRegisterNewUserResponse successResponse = new()
+                    {
+                        Message = CustomMessages.CM017,
+                        Status = ResponseStatus.Success
+                    };
+                    return successResponse;
+                }
+                DtoAdminRegisterNewUserResponse response = new()
+                {
+                    Message = CustomMessages.CM002,
+                    Status = ResponseStatus.Failed
+                };
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.ErrorLog(FileName, "AdminRegisterUser", ex);
+                throw;
+            }
+        }
+        #endregion
+
+        #region Retrive All the Roles
+
+        public List<MasterRole> GetAllActiveRoles()
+        {
+            try
+            {
+                var allRoles = DbContext.MasterRoles.Where(x => x.IsDelete == false).ToList();
+                return allRoles;
+            }
+            catch (Exception ex)
+            {
+                Logger.ErrorLog(FileName, "GetAllActiveRoles", ex);
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Reset and Confirm Email
+        public async Task<DtoResponse> ResetPasswordAndConfirmEmail(DtoResetPasswordAndVerifyEmail dtouser)
+        {
+            try
+            {
+                var user = await UserManager.FindByEmailAsync(dtouser.Email);
+                var resetPassResult = await UserManager.ResetPasswordAsync(user, dtouser.ResetToken, dtouser.Password);
+                user = await UserManager.FindByEmailAsync(user.Email);
+                var resetToken = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+                if (resetPassResult.Succeeded)
+                {
+                    var verification = await UserManager.ConfirmEmailAsync(user, resetToken);
+                    if (verification.Succeeded)
+                    {
+                        var userDetails = DbContext.Users.FirstOrDefault(x => x.AuthId == user.Id);
+                        userDetails.Status = MasterUserStatus.VerifiedAndPasswordChanged;
+                        userDetails.UpdatedOn= DateTime.Now;
+                        DbContext.SaveChanges();
+                        DtoResponse successResponse = new()
+                        {
+                            Status = ResponseStatus.Success,
+                            Message = CustomMessages.CM015,
+                        };
+                        return successResponse;
+                    }
+                }
+                DtoResponse response = new()
+                {
+                    Status = ResponseStatus.Failed,
+                    Message = CustomMessages.CM016,
+                };
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.ErrorLog(FileName, "ResetPasswordAndConfirmEmail", ex);
+                throw;
+            }
+        }
+        #endregion
+
+        #region Delete User
+        public async Task<DtoResponse> RemoveUser(int userId)
+        {
+            try
+            {
+                var userDetails = DbContext.Users.FirstOrDefault(x => x.UserId == userId);
+                if (userDetails != null)
+                {
+                    var netUser = await UserManager.FindByEmailAsync(userDetails.Email);
+                    await UserManager.DeleteAsync(netUser);
+                    userDetails.IsDelete = true;
+                    DbContext.SaveChanges();
+                    DtoResponse successResponse = new()
+                    {
+                        Status = ResponseStatus.Success,
+                        Message = CustomMessages.CM018,
+                    };
+                    return successResponse;
+                }
+                DtoResponse failureResponse = new()
+                {
+                    Status = ResponseStatus.Failed,
+                    Message = CustomMessages.CM019,
+                };
+                return failureResponse;
+            }
+            catch (Exception ex)
+            {
+                Logger.ErrorLog(FileName, "RemoveUser", ex);
+                throw;
+            }
+        }
+        #endregion
+
+        #region ResendActivationMail
+        public async Task<DtoUserRegistrationResponse> ResendActivationMail(string email)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(email))
+                {
+                    var IdentityUser = await UserManager.FindByEmailAsync(email);
+                    var netusers = await UserManager.FindByEmailAsync(email);
+                    var resetToken = await UserManager.GeneratePasswordResetTokenAsync(netusers);
+                    Email.Email mail = new();
+                    var sendMailThread = new Thread(() => mail.AdminAddUserWelcomeEmail(IdentityUser.Email, "Welcome to PoC", HttpUtility.UrlEncode(resetToken)));
+                    sendMailThread.Start();
+                    DtoUserRegistrationResponse response = new()
+                    {
+                        Message = CustomMessages.CM027,
+                        Status = Status.UserResendActivationMailSent
+                    };
+                    return response;
+                }
+                DtoUserRegistrationResponse ErrorResponse = new()
+                {
+                    Message = CustomMessages.CM028,
+                    Status = Status.UserNotCreatedStatus
+                };
+                return ErrorResponse;
+            }
+            catch(Exception ex)
+            {
+                Logger.ErrorLog(FileName, "ResendActivationMail", ex);
+                throw;
+            }
+        }
         #endregion
     }
 }

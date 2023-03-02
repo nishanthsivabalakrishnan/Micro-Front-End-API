@@ -25,9 +25,13 @@ namespace MicroFrontendDal.DataModels
         public virtual DbSet<Category> Categories { get; set; } = null!;
         public virtual DbSet<Logger> Loggers { get; set; } = null!;
         public virtual DbSet<MasterInformation> MasterInformations { get; set; } = null!;
+        public virtual DbSet<MasterPageRouting> MasterPageRoutings { get; set; } = null!;
         public virtual DbSet<MasterRole> MasterRoles { get; set; } = null!;
         public virtual DbSet<MasterStatus> MasterStatuses { get; set; } = null!;
+        public virtual DbSet<MasterTaskStatus> MasterTaskStatuses { get; set; } = null!;
+        public virtual DbSet<Task> Tasks { get; set; } = null!;
         public virtual DbSet<User> Users { get; set; } = null!;
+        public virtual DbSet<UserDetail> UserDetails { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -148,6 +152,15 @@ namespace MicroFrontendDal.DataModels
                     .HasColumnName("Information Name");
             });
 
+            modelBuilder.Entity<MasterPageRouting>(entity =>
+            {
+                entity.HasKey(e => e.MasterPageId);
+
+                entity.ToTable("MasterPageRouting");
+
+                entity.Property(e => e.MasterPageRoute).HasMaxLength(150);
+            });
+
             modelBuilder.Entity<MasterRole>(entity =>
             {
                 entity.HasKey(e => e.RoleId);
@@ -166,6 +179,26 @@ namespace MicroFrontendDal.DataModels
                 entity.Property(e => e.Status).HasMaxLength(50);
             });
 
+            modelBuilder.Entity<MasterTaskStatus>(entity =>
+            {
+                entity.HasKey(e => e.TaskStatusId);
+
+                entity.ToTable("MasterTaskStatus");
+
+                entity.Property(e => e.TaskStatus).HasMaxLength(250);
+            });
+
+            modelBuilder.Entity<Task>(entity =>
+            {
+                entity.ToTable("Task");
+
+                entity.Property(e => e.CreatedOn).HasColumnType("datetime");
+
+                entity.Property(e => e.TaskName).HasMaxLength(250);
+
+                entity.Property(e => e.UpdatedOn).HasColumnType("datetime");
+            });
+
             modelBuilder.Entity<User>(entity =>
             {
                 entity.Property(e => e.CreatedOn).HasColumnType("datetime");
@@ -177,8 +210,35 @@ namespace MicroFrontendDal.DataModels
                 entity.Property(e => e.LastName).HasMaxLength(100);
 
                 entity.Property(e => e.UpdatedOn).HasColumnType("datetime");
+            });
 
-                entity.Property(e => e.UserName).HasMaxLength(100);
+            modelBuilder.Entity<UserDetail>(entity =>
+            {
+                entity.HasKey(e => e.UserDetailsId);
+
+                entity.Property(e => e.Address).HasMaxLength(200);
+
+                entity.Property(e => e.City).HasMaxLength(50);
+
+                entity.Property(e => e.CollegeName).HasMaxLength(50);
+
+                entity.Property(e => e.Country).HasMaxLength(50);
+
+                entity.Property(e => e.DateOfBirth).HasMaxLength(50);
+
+                entity.Property(e => e.Designation).HasMaxLength(50);
+
+                entity.Property(e => e.Email).HasMaxLength(50);
+
+                entity.Property(e => e.FirstName).HasMaxLength(50);
+
+                entity.Property(e => e.LastName).HasMaxLength(50);
+
+                entity.Property(e => e.Percentage).HasMaxLength(50);
+
+                entity.Property(e => e.PostalCode).HasMaxLength(50);
+
+                entity.Property(e => e.WorkLocation).HasMaxLength(50);
             });
 
             OnModelCreatingPartial(modelBuilder);

@@ -10,11 +10,11 @@ namespace MicroFrontendDal.DataModels
         public string? Email { get; set; }
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
-        public string? UserName { get; set; }
         public int? Role { get; set; }
         public int? Status { get; set; }
         public DateTime? CreatedOn { get; set; }
         public DateTime? UpdatedOn { get; set; }
         public bool? IsDelete { get; set; }
+        public int? ReportsTo { get; set; }
     }
 }

@@ -1,10 +1,14 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿/*
+ * <Your-Product-Name>
+ * Copyright (c) <Year-From>-<Year-To> <Your-Company-Name>
+ *
+ * Please configure this header in your SonarCloud/SonarQube quality profile.
+ * You can also set it in SonarLint.xml additional file for SonarLint or standalone NuGet analyzer.
+ */
+
+using MicroFrontendDal.DTO.Management;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MicroFrontendDal.BusinessRules.AppDbContext
 {
@@ -17,7 +21,10 @@ namespace MicroFrontendDal.BusinessRules.AppDbContext
         {
 
         }
-
+        public virtual DbSet<DtoSpGetAllUsers> GetAllUsers { get; set; }
+        public virtual DbSet<DtoSpGetUserById> GetAllUserById { get; set; }
+        public virtual DbSet<DtoSpGetTeamList> GetTeamList { get; set; }
+        public virtual DbSet<DtoSpGetTaskBoard> GetTaskBoards { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
